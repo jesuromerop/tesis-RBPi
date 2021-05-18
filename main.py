@@ -37,9 +37,6 @@ def verify_code(url, headers, json_body):
         print(f"Cookie: {r.cookies['userToken']}")
 
     return json.loads(r.content)['success']
-    print(r.cookies)
-    global cookies 
-    cookies = r.cookies
 
 def facial_recognition():
     # Obtiene imagen de la camara 0
@@ -57,13 +54,11 @@ def facial_recognition():
     # Inicializacion de variables
     face_locations = []
     face_encodings = []
-    face_names = []
-    process_this_frame = True
     count = 1
 
     while True:
         # Obtiene un cuadro del video
-        ret, frame = video_capture.read()
+        frame = video_capture.read()
 
         # Redimensiona el cuadro del video a 1/4 para procesamiento mas rapido
         small_frame = cv2.resize(frame, (0, 0), fx=0.25, fy=0.25)
@@ -137,10 +132,10 @@ def get_face(url, cookies):
     print(f"Body: {req.text}")
     res_dict = req.json()
     print(res_dict['data'])
-    r3 = s.get(f"{url}{res_dict['data']}")
-    print(f"Status Code: {r3.status_code}")
+    r = s.get(f"{url}{res_dict['data']}")
+    print(f"Status Code: {r.status_code}")
 
-    return r3.content
+    return r.content
 
 def create_record():
     req = s.post(f"{url}/setRecord", cookies=dict(cookies))
@@ -211,6 +206,11 @@ if __name__ == "__main__":
     s = requests.Session() 
 
     # Puertos GPIO
+    # Pinout:
+    # 1: Not Used
+    # 2-5: Columns 1-4
+    # 6-9: Rows 1-4
+    # 10: Not used
     L1 = 12
     L2 = 16
     L3 = 20
