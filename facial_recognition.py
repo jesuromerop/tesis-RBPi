@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import face_recognition
+import RPi.GPIO as GPIO
 
 def facial_recognition():
     # Obtiene imagen de la camara 0
@@ -36,23 +37,26 @@ def facial_recognition():
         if process_this_frame:
             # Busca todas las caras del cuadro actual y las codifica
             face_locations = face_recognition.face_locations(rgb_small_frame)
-            face_encodings = face_recognition.face_encodings(rgb_small_frame, face_locations)
-
-            matches = False
-            for face_encoding in face_encodings:
-                # Revisa si la cara del cuadro coincide con la cara conocida
-                matches = face_recognition.compare_faces(known_face_encodings, face_encoding)
-
-            if matches:
-                print(matches)
-                break
+            print("Found {} faces in image.".format(len(face_locations)))
+            if len(face_locations) == 0:
+                GPIO.output(RED_LED, True)
             else:
-                print(matches)
-                count += 1
-                if count == 20:
-                    break
+                GPIO.output(RED_LED, False)
+                face_encodings = face_recognition.face_encodings(rgb_small_frame, face_locations)
 
-        process_this_frame = not process_this_frame
+                matches = False
+                for face_encoding in face_encodings:
+                    # Revisa si la cara del cuadro coincide con la cara conocida
+                    matches = face_recognition.compare_faces(known_face_encodings, face_encoding)
+
+                if matches:
+                    print(matches)
+                    process_this_frame = not process_this_frame
+                else:
+                    print(matches)
+                    count += 1
+                    if count == 20:
+                        process_this_frame = not process_this_frame
 
     # Libera la camara
     video_capture.release()

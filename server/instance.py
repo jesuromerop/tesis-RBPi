@@ -7,7 +7,7 @@ class Server(object):
     def run(self):
         self.app.run(
             debug = True,
-            host = 'localhost',
+            host = '0.0.0.0',
             port = 5000
         )
 

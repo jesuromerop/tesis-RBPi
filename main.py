@@ -58,7 +58,7 @@ def facial_recognition():
 
     while True:
         # Obtiene un cuadro del video
-        frame = video_capture.read()
+        ret, frame = video_capture.read()
 
         # Redimensiona el cuadro del video a 1/4 para procesamiento mas rapido
         small_frame = cv2.resize(frame, (0, 0), fx=0.25, fy=0.25)
