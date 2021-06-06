@@ -69,7 +69,7 @@ def takeFacePhoto(GREEN_LED, RED_LED):
                 top, right, bottom, left = face_locations[0]
                 print("A face is located at pixel location Top: {}, Left: {}, Bottom: {}, Right: {}".format(top, left, bottom, right))
 
-                top *= 2#6
+                top *= 3#6
                 right *= 6#5
                 bottom *= 6#2
                 left *= 2#3
