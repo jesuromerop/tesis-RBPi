@@ -1,7 +1,8 @@
+from flask.helpers import make_response
 from server.instance import server
 import routes.facial as facial
 import routes.finger as finger
-from flask import jsonify
+from flask import jsonify, send_file
 import RPi.GPIO as GPIO
 from flask_cors import CORS
 import time
@@ -24,32 +25,32 @@ CORS(app)
 def blink_red_led():
     print("Blinking red led")
     GPIO.output(RED_LED, True)
-    time.sleep(1)
+    time.sleep(0.4)
     GPIO.output(RED_LED, False)
-    time.sleep(1)
+    time.sleep(0.4)
     GPIO.output(RED_LED, True)
-    time.sleep(1)
+    time.sleep(0.4)
     GPIO.output(RED_LED, False)
-    time.sleep(1)
+    time.sleep(0.4)
     GPIO.output(RED_LED, True)
-    time.sleep(1)
+    time.sleep(0.4)
     GPIO.output(RED_LED, False)
-    time.sleep(1)
+    time.sleep(0.4)
 
 def blink_green_led():
     print("Blinking green led")
     GPIO.output(GREEN_LED, True)
-    time.sleep(1)
+    time.sleep(0.4)
     GPIO.output(GREEN_LED, False)
-    time.sleep(1)
+    time.sleep(0.4)
     GPIO.output(GREEN_LED, True)
-    time.sleep(1)
+    time.sleep(0.4)
     GPIO.output(GREEN_LED, False)
-    time.sleep(1)
+    time.sleep(0.4)
     GPIO.output(GREEN_LED, True)
-    time.sleep(1)
+    time.sleep(0.4)
     GPIO.output(GREEN_LED, False)
-    time.sleep(1)
+    time.sleep(0.4)
 
 # a simple page that says hello
 @app.route('/hello')
@@ -59,7 +60,8 @@ def hello():
 @app.route('/getFingerprint', methods=['GET'])
 def getFingerprint():
     print('Getting fingerprint...')
-    result = finger.get_fingerprint(blink_green_led, blink_red_led, 0)
+    #result = finger.get_fingerprint(blink_green_led, blink_red_led, 0)
+    result = finger.get_fingerprint()
     return jsonify(result)
 
 @app.route('/getFace', methods=['GET'])

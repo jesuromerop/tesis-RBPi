@@ -42,7 +42,7 @@ def takeFacePhoto(GREEN_LED, RED_LED):
             print("No face")
             GPIO.output(RED_LED, True)
             countNoFace += 1
-            if countNoFace > 9:
+            if countNoFace > 16:
                 imgSuccess = False
                 break
         else:
@@ -59,7 +59,7 @@ def takeFacePhoto(GREEN_LED, RED_LED):
                 GPIO.output(RED_LED, True)
                 print("Blurry face")
                 countBlurry +=1
-                if countBlurry > 9:
+                if countBlurry > 30:
                     imgSuccess = False
                     break
             else:
@@ -84,10 +84,8 @@ def takeFacePhoto(GREEN_LED, RED_LED):
                 
                 imgSuccess = True
                 break
-        
             
-
-        time.sleep(1)
+        time.sleep(0.5)
 
 
     # Libera la camara
@@ -96,7 +94,7 @@ def takeFacePhoto(GREEN_LED, RED_LED):
     GPIO.output(RED_LED, False)
     if imgSuccess:
         return {'base64_img': encoded_img, 'success': True, 'msg': "Imagen tomada satisfactoriamente"}
-    elif countBlurry > 9:
+    elif countBlurry > 30:
         return {'success': False, 'blurry': True, 'msg': "Fallo al tomar la imagen, foto borrosa"}
     else:
         return {'success': False, 'noFace': True, 'msg': "Fallo al tomar la imagen, no hay una cara en la foto"}
