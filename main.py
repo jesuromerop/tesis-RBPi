@@ -6,6 +6,7 @@ import cv2
 import sys
 import numpy as np
 import face_recognition
+import asyncio
 
 keypadPressed = -1
 code = ""
@@ -39,11 +40,13 @@ def verify_code(url, headers, json_body):
         print(f"Status Code: {r.status_code}")
         if json.loads(r.content)['success']: 
             print(f"Cookie: {r.cookies['userToken']}")
+            blink_green_led()
         else:
             print(f"Codigo invalido!")
             blink_red_led()
     else:
         print(f"Error {r.status_code}")
+        blink_red_led()
 
     return json.loads(r.content)['success']
 
@@ -64,8 +67,11 @@ def facial_recognition():
     face_locations = []
     face_encodings = []
     count = 0
+    count2 = 0
 
     while True:
+        GPIO.output(YELLOW_LED, True)
+
         # Obtiene un cuadro del video
         ret, frame = video_capture.read()
 
@@ -81,13 +87,13 @@ def facial_recognition():
         matches = False
 
         if len(face_locations) == 0:
-            GPIO.output(RED_LED, True)
-            time.sleep(0.01)
+            #await blink_yellow_led()
             count += 1
-            if count == 100:
+            if count >= 100:
+                GPIO.output(YELLOW_LED, False)
                 break
         else:
-            GPIO.output(RED_LED, False)
+            GPIO.output(YELLOW_LED, False)
             face_encodings = face_recognition.face_encodings(rgb_small_frame, face_locations)
 
             for face_encoding in face_encodings:
@@ -99,9 +105,8 @@ def facial_recognition():
                 break
             else:
                 print(matches)
-                time.sleep(0.01)
-                count += 1
-                if count == 100:
+                count2 += 1
+                if count2 >= 25:
                     break
 
     # Libera la camara
@@ -113,32 +118,20 @@ def facial_recognition():
 def blink_red_led():
     print("Blinking red led")
     GPIO.output(RED_LED, True)
-    time.sleep(0.4)
+    time.sleep(2)
     GPIO.output(RED_LED, False)
-    time.sleep(0.4)
-    GPIO.output(RED_LED, True)
-    time.sleep(0.4)
-    GPIO.output(RED_LED, False)
-    time.sleep(0.4)
-    GPIO.output(RED_LED, True)
-    time.sleep(0.4)
-    GPIO.output(RED_LED, False)
-    time.sleep(0.4)
+
+def blink_yellow_led():
+    print("Blinking yellow led")
+    GPIO.output(YELLOW_LED, True)
+    time.sleep(0.1)
+    GPIO.output(YELLOW_LED, False)
 
 def blink_green_led():
     print("Blinking green led")
     GPIO.output(GREEN_LED, True)
-    time.sleep(0.4)
+    time.sleep(2)
     GPIO.output(GREEN_LED, False)
-    time.sleep(0.4)
-    GPIO.output(GREEN_LED, True)
-    time.sleep(0.4)
-    GPIO.output(GREEN_LED, False)
-    time.sleep(0.4)
-    GPIO.output(GREEN_LED, True)
-    time.sleep(0.4)
-    GPIO.output(GREEN_LED, False)
-    time.sleep(0.4)
 
 def get_face(url):
     req = s.get(f"{url}/getFace")
@@ -179,7 +172,7 @@ def match_fingerprint(fingers):
     import serial
     import adafruit_fingerprint
 
-    uart = serial.Serial("/dev/ttyUSB1", baudrate=57600, timeout=1)
+    uart = serial.Serial("/dev/ttyUSB0", baudrate=57600, timeout=1)
     finger = adafruit_fingerprint.Adafruit_Fingerprint(uart)
 
     """Compares a new fingerprint template to an existing template stored in a file
@@ -234,108 +227,75 @@ def create_record():
         return False
 
 def main():
-    #b = True
-    #cont = 0
     global code
     global keypadPressed
-    # try:
-    #     while b:
-    #         for i in keypad:
-    #             keypressed = readLine(i['line'], i['keys'])
-    #             if "A" in keypressed:
-    #                 keypressed = keypressed.strip("A")
-    #                 code += keypressed
-    #                 print(f"Key Pressed: {code}")
-    #                 b = False
-    #                 break
-    #             else:
-    #                 if code != "":
-    #                     if code[-1] != keypressed:
-    #                         code += keypressed
-    #                         cont = 0
-    #                     else:
-    #                         cont += 1
-    #                         if cont >= 18:
-    #                             code += keypressed
-    #                             cont = 0
-    #                 else:
-    #                     code += keypressed
 
-    #         time.sleep(0.115)
-    try:
-        print("Ingrese el codigo")
-        while True:
-            # If a button was previously pressed,
-            # check, whether the user has released it yet
-            if keypadPressed != -1:
-                setAllLines(GPIO.HIGH)
-                if GPIO.input(keypadPressed) == 0:
-                    keypadPressed = -1
+    print("Ingrese el codigo")
+    while True:
+        # If a button was previously pressed,
+        # check, whether the user has released it yet
+        if keypadPressed != -1:
+            setAllLines(GPIO.HIGH)
+            if GPIO.input(keypadPressed) == 0:
+                keypadPressed = -1
+            else:
+                time.sleep(0.1)
+        # Otherwise, just read the input
+        else:
+            result = checkSpecialKeys()
+            if not result['pressedA'] and not result['pressedC']:
+                readLine(L1, ["1","2","3","A"])
+                readLine(L2, ["4","5","6","B"])
+                readLine(L3, ["7","8","9","C"])
+                readLine(L4, ["*","0","#","D"])
+                time.sleep(0.1)
+            else:
+                if result['pressedA']:
+                    break
                 else:
                     time.sleep(0.1)
-            # Otherwise, just read the input
-            else:
-                result = checkSpecialKeys()
-                if not result['pressedA'] and not result['pressedC']:
-                    readLine(L1, ["1","2","3","A"])
-                    readLine(L2, ["4","5","6","B"])
-                    readLine(L3, ["7","8","9","C"])
-                    readLine(L4, ["*","0","#","D"])
-                    time.sleep(0.1)
-                else:
-                    if result['pressedA']:
-                        break
-                    else:
-                        time.sleep(0.1)
 
-        # Verificacion del codigo
-        body['code'] = code
-        json_body = json.dumps(body)
-        success = verify_code(url, headers, json_body)
-        code = ""
-        if success:
-            blink_green_led()
-            
-            fingers = get_fingers(url)
-            # print(fingers)
+    # Verificacion del codigo
+    body['code'] = code
+    json_body = json.dumps(body)
+    success = verify_code(url, headers, json_body)
+    code = ""
+    if success:
+        
+        fingers = get_fingers(url)
 
-            if fingers:
-                match_finger = match_fingerprint(fingers)
-            else:
-                match_finger = True
-            
-            if match_finger: 
-                img = get_face(url)
+        if fingers:
+            match_finger = match_fingerprint(fingers)
+        else:
+            match_finger = True
+        
+        if match_finger: 
+            img = get_face(url)
 
-                if img:
-                    with open("image.jpg", 'wb') as f:
-                        f.write(img)
+            if img:
+                with open("image.jpg", 'wb') as f:
+                    f.write(img)
 
-                    match = facial_recognition()
-                    if match:
-                        print("Reconocimiento facial exitoso")
-                        blink_green_led()
-                        record = create_record()
-                        if record:
-                            print("Registro creado satisfactoriamente")
-                        else:
-                            print("Error al crear registro")
-                    else:
-                        print("Fallo el reconocimiento facial")
-                        blink_red_led()
-                else:
+                match = facial_recognition()
+                if match:
+                    print("Reconocimiento facial exitoso")
+                    blink_green_led()
                     record = create_record()
                     if record:
                         print("Registro creado satisfactoriamente")
                     else:
                         print("Error al crear registro")
-        else: 
-            # raise Exception("codigo invalido")
-            print("Ha ocurrido un error")
+                else:
+                    print("Fallo el reconocimiento facial")
+                    blink_red_led()
+            else:
+                record = create_record()
+                if record:
+                    print("Registro creado satisfactoriamente")
+                else:
+                    print("Error al crear registro")
+        else:
             blink_red_led()
-    except KeyboardInterrupt:
-            print("\nAplicacion detenida!")
-            GPIO.cleanup()
             
 # This callback registers the key that was pressed
 # if no other key is currently pressed
@@ -421,6 +381,7 @@ if __name__ == "__main__":
     C4 = 19
 
     GREEN_LED = 23
+    YELLOW_LED = 25
     RED_LED = 24
 
     keypad = [
@@ -439,6 +400,8 @@ if __name__ == "__main__":
     GPIO.setup(GREEN_LED, GPIO.OUT)
     # LED rojo
     GPIO.setup(RED_LED, GPIO.OUT)
+    # LED amarillo
+    GPIO.setup(YELLOW_LED, GPIO.OUT)
 
     # Configuracion de puertos de salida para el keypad
     for i in keypad:
@@ -450,11 +413,17 @@ if __name__ == "__main__":
     # Detect the rising edges on the column lines of the
     # keypad. This way, we can detect if the user presses
     # a button when we send a pulse.
-    GPIO.add_event_detect(C1, GPIO.RISING, callback=keypadCallback)
-    GPIO.add_event_detect(C2, GPIO.RISING, callback=keypadCallback)
-    GPIO.add_event_detect(C3, GPIO.RISING, callback=keypadCallback)
-    GPIO.add_event_detect(C4, GPIO.RISING, callback=keypadCallback)
+    GPIO.add_event_detect(C1, GPIO.RISING, callback=keypadCallback, bouncetime=500)
+    GPIO.add_event_detect(C2, GPIO.RISING, callback=keypadCallback, bouncetime=500)
+    GPIO.add_event_detect(C3, GPIO.RISING, callback=keypadCallback, bouncetime=500)
+    GPIO.add_event_detect(C4, GPIO.RISING, callback=keypadCallback, bouncetime=500)
 
     cookies = ""
     while True:
-        main()
+        try:
+            main()
+        except KeyboardInterrupt:
+            print("\nAplicacion detenida!")
+            GPIO.cleanup()
+            sys.exit(0)
+        

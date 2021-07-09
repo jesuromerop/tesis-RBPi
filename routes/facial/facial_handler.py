@@ -17,7 +17,7 @@ def variance_of_laplacian(image):
 	# el cual es la varianza de Laplace
 	return cv2.Laplacian(image, cv2.CV_64F).var()
 
-def takeFacePhoto(GREEN_LED, RED_LED):
+def takeFacePhoto(YELLOW_LED):
     # Obtiene imagen de la camara 0
     video_capture = cv2.VideoCapture(0)
 
@@ -25,6 +25,7 @@ def takeFacePhoto(GREEN_LED, RED_LED):
     countNoFace = 0
 
     while True:
+        GPIO.output(YELLOW_LED, True)
         # Obtiene un cuadro del video
         ret, frame = video_capture.read()
         
@@ -40,9 +41,9 @@ def takeFacePhoto(GREEN_LED, RED_LED):
 
         if len(face_locations) == 0:
             print("No face")
-            GPIO.output(RED_LED, True)
             countNoFace += 1
             if countNoFace > 16:
+                GPIO.output(YELLOW_LED, False)
                 imgSuccess = False
                 break
         else:
@@ -56,14 +57,14 @@ def takeFacePhoto(GREEN_LED, RED_LED):
             # la imagen esta borrosa
             print(f"Focus mesurement {fm}")
             if fm < 20.0:
-                GPIO.output(RED_LED, True)
                 print("Blurry face")
                 countBlurry +=1
                 if countBlurry > 30:
+                    GPIO.output(YELLOW_LED, False)
                     imgSuccess = False
                     break
             else:
-                GPIO.output(RED_LED, False)
+                GPIO.output(YELLOW_LED, False)
                 print("Got clear face")
                 # Imprime la ubicacion de todas las caras de la imagen
                 top, right, bottom, left = face_locations[0]
@@ -91,7 +92,7 @@ def takeFacePhoto(GREEN_LED, RED_LED):
     # Libera la camara
     video_capture.release()
     cv2.destroyAllWindows()
-    GPIO.output(RED_LED, False)
+
     if imgSuccess:
         return {'base64_img': encoded_img, 'success': True, 'msg': "Imagen tomada satisfactoriamente"}
     elif countBlurry > 30:
